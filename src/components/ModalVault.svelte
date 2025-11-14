@@ -44,6 +44,8 @@
   let historySearchIndex = 0
   let searchQuery = $state(previousQuery ?? '')
   let resultNotes: ResultNote[] = $state([])
+  let baseResultNotes: ResultNote[] = []
+  let sortByLastEdited = $state(false)
   let query: Query
   let indexingStepDesc = $state('')
   let searching = $state(true)
@@ -55,6 +57,9 @@
   let openInNewLeafKey: string = `${getCtrlKeyLabel()} ${getAltKeyLabel()} ↵`
 
   const selectedNote = $derived(resultNotes[selectedIndex])
+  const sortModeLabel = $derived(
+    sortByLastEdited ? 'Last edited' : 'Relevance'
+  )
 
   $effect(() => {
     if (plugin.settings.openInNewPane) {
@@ -113,6 +118,7 @@
     eventBus.on('vault', Action.PrevSearchHistory, prevSearchHistory)
     eventBus.on('vault', Action.NextSearchHistory, nextSearchHistory)
     eventBus.on('vault', Action.OpenInNewLeaf, openNoteInNewLeaf)
+    eventBus.on('vault', Action.ToggleSortByEdited, toggleSortByLastEdited)
     await plugin.notesIndexer.refreshIndex()
     await updateResultsDebounced()
   })
@@ -157,8 +163,8 @@
         resolve(plugin.searchEngine.getSuggestions(query))
       })
     )
-    resultNotes = await cancelableQuery
-    selectedIndex = 0
+    baseResultNotes = await cancelableQuery
+    refreshDisplayedResults(false)
     await scrollIntoView()
     searching = false
   }
@@ -304,6 +310,35 @@
     scrollIntoView()
   }
 
+  function refreshDisplayedResults(preserveSelection: boolean): void {
+    const previousPath = preserveSelection ? selectedNote?.path : null
+    if (!baseResultNotes.length) {
+      resultNotes = []
+      selectedIndex = 0
+      return
+    }
+    const sorted = sortByLastEdited
+      ? [...baseResultNotes].sort((a, b) => {
+          const mtimeDiff = (b.mtime ?? 0) - (a.mtime ?? 0)
+          if (mtimeDiff !== 0) return mtimeDiff
+          return b.score - a.score
+        })
+      : [...baseResultNotes]
+    resultNotes = sorted
+    if (previousPath) {
+      const newIndex = sorted.findIndex(note => note.path === previousPath)
+      selectedIndex = newIndex >= 0 ? newIndex : 0
+    } else {
+      selectedIndex = 0
+    }
+  }
+
+  function toggleSortByLastEdited(): void {
+    sortByLastEdited = !sortByLastEdited
+    refreshDisplayedResults(true)
+    scrollIntoView()
+  }
+
   async function scrollIntoView(): Promise<void> {
     await tick()
     if (selectedNote) {
@@ -330,6 +365,10 @@
     {/if}
   </div>
 </InputSearch>
+
+<div class="omnisearch-sort-indicator">
+  Sorting by {sortModeLabel}
+</div>
 
 {#if indexingStepDesc}
   <div style="text-align: center; color: var(--text-accent); margin-top: 10px">
@@ -421,6 +460,10 @@
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">{getCtrlKeyLabel()} g</span>
     <span>to toggle excerpts</span>
+  </div>
+  <div class="prompt-instruction">
+    <span class="prompt-instruction-command">{getCtrlKeyLabel()} e</span>
+    <span>to toggle last edited sort ({sortModeLabel.toLowerCase()})</span>
   </div>
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">Esc</span><span>to close</span>

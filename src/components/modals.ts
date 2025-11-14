@@ -147,6 +147,11 @@ abstract class OmnisearchModal extends Modal {
     this.scope.register(['Mod'], 'G', _e => {
       eventBus.emit(EventNames.ToggleExcerpts)
     })
+
+    this.scope.register(['Mod'], 'E', e => {
+      e.preventDefault()
+      eventBus.emit(Action.ToggleSortByEdited)
+    })
   }
 }
 

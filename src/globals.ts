@@ -39,6 +39,7 @@ export const enum Action {
   PrevSearchHistory = 'prev-search-history',
   NextSearchHistory = 'next-search-history',
   OpenInNewLeaf = 'open-in-new-leaf',
+  ToggleSortByEdited = 'toggle-sort-by-edited',
 }
 
 export const enum RecencyCutoff {

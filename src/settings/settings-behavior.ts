@@ -67,7 +67,7 @@ export function injectSettingsBehavior(
           folders = folders.map(f => f.trim())
           settings.downrankedFoldersFilters = folders
           await saveSettings(plugin)
-        })
+      })
     })
 
   // Split CamelCaseWords
