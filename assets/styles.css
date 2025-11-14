@@ -133,3 +133,12 @@
   position: relative;
   flex-grow: 1;
 }
+
+.omnisearch-sort-indicator {
+  text-align: center;
+  padding: 6px 0 4px 0;
+  margin: 0 0 8px 0;
+  font-size: 0.9em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--background-modifier-border);
+}
