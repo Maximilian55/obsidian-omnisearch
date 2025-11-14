@@ -119,6 +119,7 @@ export function getDefaultSettings(app: App): OmnisearchSettings {
     renderLineReturnInExcerpts: true,
     showCreateButton: false,
     highlight: true,
+    defaultVaultSort: 'relevance',
     showPreviousQueryResults: true,
     simpleSearch: false,
     tokenizeUrls: false,

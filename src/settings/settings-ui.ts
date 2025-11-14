@@ -95,4 +95,22 @@ export function injectSettingsUserInterface(
         await saveSettings(plugin)
       })
     )
+
+  new Setting(containerEl)
+    .setName('Default vault sort order')
+    .setDesc('Choose how results are ordered when the search modal opens.')
+    .addDropdown(dropdown =>
+      dropdown
+        .addOptions({
+          relevance: 'Relevance',
+          lastEdited: 'Last edited',
+        })
+        .setValue(settings.defaultVaultSort)
+        .onChange(async value => {
+          settings.defaultVaultSort = (value === 'lastEdited'
+            ? 'lastEdited'
+            : 'relevance') as 'relevance' | 'lastEdited'
+          await saveSettings(plugin)
+        })
+    )
 }

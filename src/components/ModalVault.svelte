@@ -45,7 +45,9 @@
   let searchQuery = $state(previousQuery ?? '')
   let resultNotes: ResultNote[] = $state([])
   let baseResultNotes: ResultNote[] = []
-  let sortByLastEdited = $state(false)
+  let sortByLastEdited = $state(
+    plugin.settings.defaultVaultSort === 'lastEdited'
+  )
   let query: Query
   let indexingStepDesc = $state('')
   let searching = $state(true)

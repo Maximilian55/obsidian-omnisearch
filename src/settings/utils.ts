@@ -78,6 +78,7 @@ export interface OmnisearchSettings extends WeightingSettings {
   simpleSearch: boolean
   tokenizeUrls: boolean
   highlight: boolean
+  defaultVaultSort: 'relevance' | 'lastEdited'
   splitCamelCase: boolean
   openInNewPane: boolean
   verboseLogging: boolean
