@@ -18,6 +18,7 @@
     getExtension,
     isFilePDF,
     loopIndex,
+    normalizeFolderPath,
   } from '../tools/utils'
   import {
     OmnisearchInFileModal,
@@ -29,6 +30,10 @@
   import { debounce } from 'lodash-es'
   import type OmnisearchPlugin from '../main'
   import LazyLoader from './lazy-loader/LazyLoader.svelte'
+  import type {
+    FolderScopeSelection,
+    FolderScopeSetting,
+  } from '../settings/utils'
 
   let {
     modal,
@@ -58,6 +63,19 @@
   let createInCurrentPaneKey: string = $state('')
   let openInNewLeafKey: string = `${getCtrlKeyLabel()} ${getAltKeyLabel()} ↵`
 
+  type FolderScopeOption = {
+    key: FolderScopeSelection
+    label: string
+    path: string | null
+  }
+
+  const folderScopeOptions: FolderScopeOption[] = buildFolderScopeOptions(
+    plugin.settings.folderScopes
+  )
+  let activeFolderScope: FolderScopeSelection = $state(
+    getDefaultFolderScope(plugin.settings.defaultFolderScope, folderScopeOptions)
+  )
+
   const selectedNote = $derived(resultNotes[selectedIndex])
   const sortModeLabel = $derived(
     sortByLastEdited ? 'Last edited' : 'Relevance'
@@ -65,6 +83,42 @@
   const oppositeSortModeLabel = $derived(
     sortByLastEdited ? 'Relevance' : 'Last edited'
   )
+  const activeFolderPath = $derived(
+    folderScopeOptions.find(option => option.key === activeFolderScope)?.path ??
+      null
+  )
+
+  function buildFolderScopeOptions(
+    scopes: FolderScopeSetting[]
+  ): FolderScopeOption[] {
+    const options: FolderScopeOption[] = [
+      { key: 'all', label: 'All', path: null },
+    ]
+    scopes?.forEach((scope, index) => {
+      const normalized = normalizeFolderPath(scope?.path ?? '')
+      if (!normalized) return
+      const label =
+        scope?.alias?.trim() ||
+        normalized.split('/').filter(Boolean).pop() ||
+        `Folder ${index + 1}`
+      options.push({
+        key: index as FolderScopeSelection,
+        label,
+        path: normalized,
+      })
+    })
+    return options
+  }
+
+  function getDefaultFolderScope(
+    selection: FolderScopeSelection,
+    options: FolderScopeOption[]
+  ): FolderScopeSelection {
+    if (selection === 'all') return 'all'
+    return options.some(option => option.key === selection && option.path)
+      ? selection
+      : 'all'
+  }
 
   $effect(() => {
     if (plugin.settings.openInNewPane) {
@@ -110,6 +164,23 @@
     }
   })
 
+  function setFolderScope(scope: FolderScopeSelection): void {
+    if (activeFolderScope === scope) return
+    activeFolderScope = scope
+    updateResults()
+  }
+
+  function cycleFolderScope(): void {
+    const currentIndex = folderScopeOptions.findIndex(
+      option => option.key === activeFolderScope
+    )
+    const nextIndex =
+      currentIndex >= 0
+        ? (currentIndex + 1) % folderScopeOptions.length
+        : 0
+    setFolderScope(folderScopeOptions[nextIndex]?.key ?? 'all')
+  }
+
   onMount(async () => {
     eventBus.enable('vault')
     eventBus.on('vault', Action.Enter, openNoteAndCloseModal)
@@ -124,6 +195,7 @@
     eventBus.on('vault', Action.NextSearchHistory, nextSearchHistory)
     eventBus.on('vault', Action.OpenInNewLeaf, openNoteInNewLeaf)
     eventBus.on('vault', Action.ToggleSortByEdited, toggleSortByLastEdited)
+    eventBus.on('vault', Action.CycleFolderScope, cycleFolderScope)
     await plugin.notesIndexer.refreshIndex()
     await updateResultsDebounced()
   })
@@ -165,7 +237,11 @@
     })
     cancelableQuery = cancelable(
       new Promise(resolve => {
-        resolve(plugin.searchEngine.getSuggestions(query))
+        resolve(
+          plugin.searchEngine.getSuggestions(query, {
+            folderPath: activeFolderPath ?? undefined,
+          })
+        )
       })
     )
     baseResultNotes = await cancelableQuery
@@ -363,16 +439,26 @@
   placeholder="Omnisearch - Vault">
   <div class="omnisearch-input-container__buttons">
     {#if plugin.settings.showCreateButton}
-      <button on:click={onClickCreateNote}>Create note</button>
+      <button onclick={onClickCreateNote}>Create note</button>
     {/if}
     {#if Platform.isMobile}
-      <button on:click={switchToInFileModal}>In-File search</button>
+      <button onclick={switchToInFileModal}>In-File search</button>
     {/if}
   </div>
 </InputSearch>
 
 <div class="omnisearch-sort-indicator">
   Sorting by {sortModeLabel}
+</div>
+
+<div class="omnisearch-folder-filters">
+  {#each folderScopeOptions as option}
+    <button
+      class:active={option.key === activeFolderScope}
+      onclick={() => setFolderScope(option.key)}>
+      {option.label}
+    </button>
+  {/each}
 </div>
 
 {#if indexingStepDesc}
@@ -424,6 +510,10 @@
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">{getAltKeyLabel()} ↑↓</span>
     <span>to cycle history</span>
+  </div>
+  <div class="prompt-instruction">
+    <span class="prompt-instruction-command">Ctrl Tab</span>
+    <span>to cycle folder filters</span>
   </div>
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">{openInCurrentPaneKey}</span>

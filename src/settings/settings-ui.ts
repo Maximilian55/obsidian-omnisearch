@@ -1,9 +1,15 @@
 import { Setting } from 'obsidian'
 import type OmnisearchPlugin from 'src/main'
 import { showExcerpt } from '.'
-import type { OmnisearchSettings } from './utils'
-import { saveSettings } from './utils'
-import { htmlDescription } from './utils'
+import type { FolderScopeSelection, OmnisearchSettings } from './utils'
+import {
+  ensureDefaultFolderScope,
+  ensureFolderScopes,
+  htmlDescription,
+  MAX_FOLDER_SCOPES,
+  saveSettings,
+} from './utils'
+import { normalizeFolderPath } from '../tools/utils'
 
 export function injectSettingsUserInterface(
   plugin: OmnisearchPlugin,
@@ -82,6 +88,72 @@ export function injectSettingsUserInterface(
         await saveSettings(plugin)
       })
     )
+
+  settings.folderScopes = ensureFolderScopes(settings.folderScopes)
+  new Setting(containerEl)
+    .setName('Folder presets')
+    .setDesc(
+      'Define up to 5 folder shortcuts that appear in the vault search modal.'
+    )
+    .setHeading()
+  for (let i = 0; i < MAX_FOLDER_SCOPES; i++) {
+    const preset = settings.folderScopes[i]
+    new Setting(containerEl)
+      .setName(`Folder ${i + 1}`)
+      .setDesc('Folder path (relative to vault) and alias to display.')
+      .addText(text =>
+        text
+          .setPlaceholder('Folder path')
+          .setValue(preset?.path ?? '')
+          .onChange(async value => {
+            settings.folderScopes[i].path = normalizeFolderPath(value)
+            settings.defaultFolderScope = ensureDefaultFolderScope(
+              settings.defaultFolderScope,
+              settings.folderScopes
+            )
+            await saveSettings(plugin)
+          })
+      )
+      .addText(text =>
+        text
+          .setPlaceholder('Alias')
+          .setValue(preset?.alias ?? '')
+          .onChange(async value => {
+            settings.folderScopes[i].alias = value.trim()
+            await saveSettings(plugin)
+          })
+      )
+  }
+
+  new Setting(containerEl)
+    .setName('Default folder filter')
+    .setDesc(
+      'Choose which folder preset (or all folders) is selected when opening vault search.'
+    )
+    .addDropdown(dropdown => {
+      const options: Record<string, string> = { all: 'All folders' }
+      settings.folderScopes.forEach((scope, i) => {
+        const label = scope.alias?.trim() || scope.path || `Folder ${i + 1}`
+        options[i.toString()] = label
+      })
+      dropdown.addOptions(options)
+      dropdown.setValue(
+        settings.defaultFolderScope === 'all'
+          ? 'all'
+          : (settings.defaultFolderScope as Exclude<
+              FolderScopeSelection,
+              'all'
+            >).toString()
+      )
+      dropdown.onChange(async value => {
+        const next = value === 'all' ? 'all' : parseInt(value, 10)
+        settings.defaultFolderScope = ensureDefaultFolderScope(
+          next,
+          settings.folderScopes
+        )
+        await saveSettings(plugin)
+      })
+    })
 
   // Highlight results
   new Setting(containerEl)

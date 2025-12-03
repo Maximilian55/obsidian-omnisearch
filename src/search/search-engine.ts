@@ -14,6 +14,7 @@ import {
   chunkArray,
   countError,
   logVerbose,
+  normalizeFolderPath,
   removeDiacritics,
 } from '../tools/utils'
 import { Notice } from 'obsidian'
@@ -134,7 +135,11 @@ export class SearchEngine {
    */
   public async search(
     query: Query,
-    options: { prefixLength: number; singleFilePath?: string }
+    options: {
+      prefixLength: number
+      singleFilePath?: string
+      folderPath?: string | null
+    }
   ): Promise<SearchResult[]> {
     const settings = this.plugin.settings
     if (query.isEmpty()) {
@@ -233,6 +238,17 @@ export class SearchEngine {
             (r.id as string).toLowerCase().includes(p.toLowerCase())
           )
       )
+    }
+
+    const normalizedFolder = normalizeFolderPath(options.folderPath ?? '')
+    if (normalizedFolder) {
+      const folderPrefix = normalizedFolder.endsWith('/')
+        ? normalizedFolder
+        : normalizedFolder + '/'
+      results = results.filter(result => {
+        const path = result.id as string
+        return path === normalizedFolder || path.startsWith(folderPrefix)
+      })
     }
 
     if (!results.length) {
@@ -395,7 +411,7 @@ export class SearchEngine {
    */
   public async getSuggestions(
     query: Query,
-    options?: Partial<{ singleFilePath?: string }>
+    options?: Partial<{ singleFilePath?: string; folderPath?: string | null }>
   ): Promise<ResultNote[]> {
     // Get the raw results
     let results: SearchResult[]
@@ -403,11 +419,13 @@ export class SearchEngine {
       results = await this.search(query, {
         prefixLength: 3,
         singleFilePath: options?.singleFilePath,
+        folderPath: options?.folderPath,
       })
     } else {
       results = await this.search(query, {
         prefixLength: 1,
         singleFilePath: options?.singleFilePath,
+        folderPath: options?.folderPath,
       })
     }
 

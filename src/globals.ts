@@ -40,6 +40,7 @@ export const enum Action {
   NextSearchHistory = 'next-search-history',
   OpenInNewLeaf = 'open-in-new-leaf',
   ToggleSortByEdited = 'toggle-sort-by-edited',
+  CycleFolderScope = 'cycle-folder-scope',
 }
 
 export const enum RecencyCutoff {

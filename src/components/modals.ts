@@ -132,6 +132,10 @@ abstract class OmnisearchModal extends Modal {
       e.preventDefault()
       eventBus.emit(Action.Tab) // Switch context
     })
+    this.scope.register(['Ctrl'], 'Tab', e => {
+      e.preventDefault()
+      eventBus.emit(Action.CycleFolderScope)
+    })
 
     // Search history
     this.scope.register(['Alt'], 'ArrowDown', e => {

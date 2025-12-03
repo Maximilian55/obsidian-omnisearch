@@ -142,3 +142,33 @@
   color: var(--text-muted);
   border-bottom: 1px solid var(--background-modifier-border);
 }
+
+.omnisearch-folder-filters {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 12px 0;
+}
+
+.omnisearch-folder-filters button {
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.85em;
+  padding: 4px 10px;
+  transition: background-color 120ms ease, color 120ms ease,
+    border-color 120ms ease;
+}
+
+.omnisearch-folder-filters button:hover {
+  border-color: var(--interactive-accent);
+}
+
+.omnisearch-folder-filters button.active {
+  background: var(--interactive-accent);
+  border-color: var(--interactive-accent);
+  color: var(--text-on-accent, var(--background-primary));
+}

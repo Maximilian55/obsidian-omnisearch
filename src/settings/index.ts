@@ -10,7 +10,13 @@ import { K_DISABLE_OMNISEARCH, RecencyCutoff } from '../globals'
 import type OmnisearchPlugin from '../main'
 import { enableVerboseLogging } from '../tools/utils'
 import { injectSettingsIndexing } from './settings-indexing'
-import { type OmnisearchSettings, saveSettings } from './utils'
+import {
+  ensureDefaultFolderScope,
+  ensureFolderScopes,
+  MAX_FOLDER_SCOPES,
+  type OmnisearchSettings,
+  saveSettings,
+} from './utils'
 import { injectSettingsBehavior } from './settings-behavior'
 import { injectSettingsUserInterface } from './settings-ui'
 import { injectSettingsWeighting } from './settings-weighting'
@@ -118,6 +124,10 @@ export function getDefaultSettings(app: App): OmnisearchSettings {
     maxEmbeds: 5,
     renderLineReturnInExcerpts: true,
     showCreateButton: false,
+    folderScopes: ensureFolderScopes(
+      Array.from({ length: MAX_FOLDER_SCOPES }, () => ({ path: '', alias: '' }))
+    ),
+    defaultFolderScope: 'all',
     highlight: true,
     defaultVaultSort: 'relevance',
     showPreviousQueryResults: true,
@@ -164,6 +174,11 @@ export async function loadSettings(
     {},
     getDefaultSettings(plugin.app),
     await plugin.loadData()
+  )
+  settings.folderScopes = ensureFolderScopes(settings.folderScopes)
+  settings.defaultFolderScope = ensureDefaultFolderScope(
+    settings.defaultFolderScope,
+    settings.folderScopes
   )
   showExcerpt.set(settings.showExcerpt)
   enableVerboseLogging(settings.verboseLogging)
