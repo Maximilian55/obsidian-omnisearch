@@ -2,6 +2,7 @@ import {
   type CachedMetadata,
   getAllTags,
   Notice,
+  normalizePath,
   parseFrontMatterAliases,
   Platform,
 } from 'obsidian'
@@ -243,6 +244,16 @@ export function splitHyphens(text: string): string[] {
     return []
   }
   return text.split('-').filter(t => t)
+}
+
+export function normalizeFolderPath(path: string): string {
+  const trimmed = path?.trim?.() ?? ''
+  if (!trimmed) return ''
+  try {
+    return normalizePath(trimmed).replace(/\/+$/, '')
+  } catch {
+    return trimmed.replace(/\\/g, '/').replace(/\/+$/, '')
+  }
 }
 
 export function logVerbose(...args: any[]): void {

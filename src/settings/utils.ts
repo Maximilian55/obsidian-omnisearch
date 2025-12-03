@@ -1,6 +1,7 @@
 import { App, Platform, Plugin } from 'obsidian'
 import { K_DISABLE_OMNISEARCH, RecencyCutoff } from 'src/globals'
 import { settings } from '.'
+import { normalizeFolderPath } from '../tools/utils'
 
 export function htmlDescription(innerHTML: string): DocumentFragment {
   const desc = new DocumentFragment()
@@ -31,6 +32,48 @@ export async function saveSettings(plugin: Plugin): Promise<void> {
 export function isCacheEnabled(): boolean {
   return !Platform.isIosApp && settings.useCache
 }
+
+export type FolderScopeSetting = { path: string; alias: string }
+export type FolderScopeSelection = 'all' | number
+export const MAX_FOLDER_SCOPES = 5
+
+export function ensureFolderScopes(
+  scopes: FolderScopeSetting[] | undefined
+): FolderScopeSetting[] {
+  const sanitized =
+    scopes?.slice(0, MAX_FOLDER_SCOPES).map(scope => ({
+      path: normalizeFolderPath(scope?.path ?? ''),
+      alias: scope?.alias?.trim?.() ?? '',
+    })) ?? []
+
+  while (sanitized.length < MAX_FOLDER_SCOPES) {
+    sanitized.push({ path: '', alias: '' })
+  }
+  return sanitized
+}
+
+export function ensureDefaultFolderScope(
+  selection: FolderScopeSelection | string | undefined,
+  scopes: FolderScopeSetting[]
+): FolderScopeSelection {
+  if (selection === 'all') return 'all'
+  const maybeIndex =
+    typeof selection === 'number'
+      ? selection
+      : typeof selection === 'string'
+        ? parseInt(selection, 10)
+        : NaN
+  if (
+    Number.isInteger(maybeIndex) &&
+    maybeIndex >= 0 &&
+    maybeIndex < scopes.length &&
+    scopes[maybeIndex]?.path
+  ) {
+    return maybeIndex as number
+  }
+  return 'all'
+}
+
 export interface OmnisearchSettings extends WeightingSettings {
   weightCustomProperties: { name: string; weight: number }[]
   /** Enables caching to speed up indexing */
@@ -70,6 +113,10 @@ export interface OmnisearchSettings extends WeightingSettings {
   renderLineReturnInExcerpts: boolean
   /** Enable a "create note" button in the Vault Search modal */
   showCreateButton: boolean
+  /** Predefined folder scopes displayed in the vault modal */
+  folderScopes: FolderScopeSetting[]
+  /** Default scope selected in the vault modal */
+  defaultFolderScope: FolderScopeSelection
   /** Re-execute the last query when opening Omnisearch */
   showPreviousQueryResults: boolean
   /** Key for the welcome message when Obsidian is updated. A message is only shown once. */
