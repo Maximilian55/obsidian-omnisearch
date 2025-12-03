@@ -502,10 +502,10 @@
 
 <div class="prompt-instructions">
   <div class="prompt-instruction">
-    <span class="prompt-instruction-command"></span><span>to navigate</span>
+    <span class="prompt-instruction-command">↑↓</span><span>to navigate</span>
   </div>
   <div class="prompt-instruction">
-    <span class="prompt-instruction-command">{getAltKeyLabel()} </span>
+    <span class="prompt-instruction-command">{getAltKeyLabel()} ↑↓</span>
     <span>to cycle history</span>
   </div>
   <div class="prompt-instruction">
@@ -546,7 +546,7 @@
   </div>
 
   <div class="prompt-instruction">
-    <span class="prompt-instruction-command">{getAltKeyLabel()} ?</span>
+    <span class="prompt-instruction-command">{getAltKeyLabel()} ↵</span>
     <span>to insert a link</span>
   </div>
   <div class="prompt-instruction">
