@@ -80,6 +80,9 @@
   const sortModeLabel = $derived(
     sortByLastEdited ? 'Last edited' : 'Relevance'
   )
+  const oppositeSortModeLabel = $derived(
+    sortByLastEdited ? 'Relevance' : 'Last edited'
+  )
   const activeFolderPath = $derived(
     folderScopeOptions.find(option => option.key === activeFolderScope)?.path ??
       null
@@ -555,7 +558,7 @@
   </div>
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">{getCtrlKeyLabel()} e</span>
-    <span>to toggle last edited sort ({sortModeLabel.toLowerCase()})</span>
+    <span>to toggle sort to {oppositeSortModeLabel}</span>
   </div>
   <div class="prompt-instruction">
     <span class="prompt-instruction-command">Esc</span><span>to close</span>
